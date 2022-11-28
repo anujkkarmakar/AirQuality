@@ -105,8 +105,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 JSONObject jsonArray = jsonObject.getJSONArray("list").getJSONObject(0);
                 JSONObject main = jsonArray.getJSONObject("main");
 
+                Toast.makeText(aqi.getContext(), "AQI SUCCESS", Toast.LENGTH_SHORT).show();
                 String airQuality = main.getString("aqi");
-                aqi.setText(airQuality);
+                aqi.setText("AQI: " + airQuality);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
