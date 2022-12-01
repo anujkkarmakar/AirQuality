@@ -15,16 +15,25 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.*;
+import java.text.DecimalFormat;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,24 +52,26 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private TextView latitude;
     private TextView longitude;
     private TextView locationTV;
-    private static TextView aqi;
+    TextView aqi;
     private Button location;
     LocationManager locationManager;
 
-    private static final String url = "http://api.openweathermap.org/data/2.5/air_pollution?";
+    private static final String url = "http://api.openweathermap.org/data/2.5/air_pollution";
     private static final String id = "1fd24c63c30371795275016b8df3a854";
-    private static String lat, lon;
+    private static String lat = "23" , lon = "87";
+
+    DecimalFormat df = new DecimalFormat("#.##");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
-                (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED))  {
+        //if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
+               if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED))  {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+//                    Manifest.permission.ACCESS_FINE_LOCATION
             }, 100);
         }
 
@@ -81,40 +92,40 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         airQI.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                new AQITask().execute();
+                getAQI();
             }
         });
     }
 
-    private static class AQITask extends AsyncTask<String, Void, String> {
+    public void getAQI() {
+        String tempUrl = url + "?lat=" + lat + "&lon=" + lon + "&appid=" + id;
+        StringRequest stringRequest = new StringRequest(Request.Method.GET, tempUrl, new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Toast.makeText(MainActivity.this, "Successful", Toast.LENGTH_SHORT).show();
+                        //Log.d("AQI:", response);
+                        String output = "";
+                        try {
+                            JSONObject jsonObject = new JSONObject(response);
+                            JSONObject jsonArray = jsonObject.getJSONArray("list").getJSONObject(0);
+                            JSONObject main = jsonArray.getJSONObject("main");
 
-        /**
-         * @param strings
-         * @deprecated
-         */
-        @Override
-        protected String doInBackground(String... strings) {
-            return HttpRequest.excuteGet(url + "lat=" + lat + "&lon=" + lon + "&appid=" + id);
-        }
-
-        @Override
-        protected void onPostExecute(String s) {
-            //we need to parse the JSON here
-            try {
-                JSONObject jsonObject = new JSONObject(s);
-                JSONObject jsonArray = jsonObject.getJSONArray("list").getJSONObject(0);
-                JSONObject main = jsonArray.getJSONObject("main");
-
-                Toast.makeText(aqi.getContext(), "AQI SUCCESS", Toast.LENGTH_SHORT).show();
-                String airQuality = main.getString("aqi");
-                aqi.setText("AQI: " + airQuality);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        }
+                            Toast.makeText(aqi.getContext(), "AQI SUCCESS", Toast.LENGTH_SHORT).show();
+                            String airQuality = main.getString("aqi");
+                            aqi.setText("AQI: " + airQuality);
+                        }catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                    }
+                });
+                RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+                requestQueue.add(stringRequest);
     }
-
-
 
     @SuppressLint("MissingPermission")
     private void getLocation() {
@@ -132,19 +143,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         lat = String.valueOf(location.getLatitude());
         lon = String.valueOf(location.getLongitude());
         latitude.setText("Latitude: " + lat);
-        longitude.setText("longitude: " + lon);
+        longitude.setText("Longitude: " + lon);
 
         // JSON Parsing
 
-//        try {
-//            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
-//            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-//            String address = addresses.get(0).getAddressLine(0);
-//
-//            locationTV.setText(address);
-//        }catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Geocoder geocoder = new Geocoder(MainActivity.this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            String address = addresses.get(0).getAddressLine(0);
+
+            locationTV.setText(address);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
