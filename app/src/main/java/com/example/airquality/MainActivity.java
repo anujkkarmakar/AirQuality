@@ -1,5 +1,8 @@
 package com.example.airquality;
 
+import static com.google.android.gms.location.Priority.PRIORITY_BALANCED_POWER_ACCURACY;
+import static com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY;
+
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -27,6 +30,13 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.CancellationToken;
+import com.google.android.gms.tasks.CancellationTokenSource;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.OnTokenCanceledListener;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -47,18 +57,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     //5. Ozone (O3)
     //6. Sulphur dioxide (SO2)
     //7. Ammonia (NH3)
-    //8. particulates (PM2.5 and PM10).
+    //8. particulates (PM2.5 and PM10)
 
     private TextView latitude;
     private TextView longitude;
     private TextView locationTV;
     TextView aqi;
-    private Button location;
     LocationManager locationManager;
+    FusedLocationProviderClient fusedLocationProviderClient;
 
     private static final String url = "http://api.openweathermap.org/data/2.5/air_pollution";
     private static final String id = "1fd24c63c30371795275016b8df3a854";
     private static String lat = "23" , lon = "87";
+    private static final int REQUEST_CODE = 100;
 
     DecimalFormat df = new DecimalFormat("#.##");
 
@@ -67,17 +78,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
-               if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED))  {
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+
+        if ((ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) ||
+               (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED))  {
             ActivityCompat.requestPermissions(MainActivity.this, new String[]{
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-//                    Manifest.permission.ACCESS_FINE_LOCATION
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.ACCESS_FINE_LOCATION
             }, 100);
         }
 
         latitude = findViewById(R.id.latitude);
         longitude = findViewById(R.id.longitude);
-        location = findViewById(R.id.getLocation);
+        Button location = findViewById(R.id.getLocation);
         locationTV = findViewById(R.id.location);
         aqi = findViewById(R.id.aqi);
         Button airQI = findViewById(R.id.airQI);
@@ -85,7 +99,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         location.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getLocation();
+                //displayLastLocation();
+                displayCurrentLocation();
+                //getLocation();
             }
         });
 
@@ -95,6 +111,98 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 getAQI();
             }
         });
+    }
+
+    //TODO: displayCurrentLocation()
+    private void displayCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            CancellationToken cancellationToken = new CancellationToken() {
+                @NonNull
+                @Override
+                public CancellationToken onCanceledRequested(@NonNull OnTokenCanceledListener onTokenCanceledListener) {
+                    return null;
+                }
+
+                @Override
+                public boolean isCancellationRequested() {
+                    return false;
+                }
+            };
+
+            fusedLocationProviderClient.getCurrentLocation(PRIORITY_BALANCED_POWER_ACCURACY, cancellationToken)
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                lat = String.valueOf(location.getLatitude());
+                                lon = String.valueOf(location.getLongitude());
+                                latitude.setText(lat);
+                                longitude.setText(lon);
+                            }
+                            else {
+                                Toast.makeText(MainActivity.this, "Cannot get Location", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        } else {
+            askPermission();
+        }
+    }
+
+
+    private void displayLastLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)==PackageManager.PERMISSION_GRANTED) {
+            fusedLocationProviderClient.getLastLocation()
+                    .addOnSuccessListener(new OnSuccessListener<Location>() {
+                        @Override
+                        public void onSuccess(Location location) {
+                            if (location != null) {
+                                lat = String.valueOf(location.getLatitude());
+                                lon = String.valueOf(location.getLongitude());
+                                latitude.setText(lat);
+                                longitude.setText(lon);
+                            }
+                            else {
+                                Toast.makeText(MainActivity.this, "Cannot get Location", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .addOnFailureListener(new OnFailureListener() {
+                        @Override
+                        public void onFailure(@NonNull Exception e) {
+                            Toast.makeText(MainActivity.this, "Cannot get Location", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+        }else {
+            askPermission();
+        }
+    }
+
+    private void askPermission() {
+        ActivityCompat.requestPermissions(MainActivity.this,new String[] {
+                Manifest.permission.ACCESS_COARSE_LOCATION
+        }, REQUEST_CODE);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+
+
+        if(requestCode == REQUEST_CODE) {
+            if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                displayCurrentLocation();
+            }
+            else {
+                Toast.makeText(this, "Permission required", Toast.LENGTH_SHORT).show();
+            }
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     public void getAQI() {
