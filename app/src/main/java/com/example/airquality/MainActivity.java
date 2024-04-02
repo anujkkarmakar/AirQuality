@@ -65,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     TextView aqi;
     LocationManager locationManager;
     FusedLocationProviderClient fusedLocationProviderClient;
+    CircularMeterView cmv;
 
     private static final String url = "http://api.openweathermap.org/data/2.5/air_pollution";
     private static final String id = "1fd24c63c30371795275016b8df3a854";
@@ -77,6 +78,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        CircularMeterView circularMeterView = findViewById(R.id.circularMeter);
+        cmv = circularMeterView;
+        // Example: Set the value (you can do this based on user input)
+        float userValue = 1; // Change this to the user's input
+        cmv.setValue(userValue);
 
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
 
@@ -136,8 +143,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             if (location != null) {
                                 lat = String.valueOf(location.getLatitude());
                                 lon = String.valueOf(location.getLongitude());
-                                latitude.setText(lat);
-                                longitude.setText(lon);
+//                                latitude.setText(lat);
+//                                longitude.setText(lon);
                             }
                             else {
                                 Toast.makeText(MainActivity.this, "Cannot get Location", Toast.LENGTH_SHORT).show();
@@ -206,8 +213,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     }
 
     public void getAQI() {
+        displayCurrentLocation();
         String tempUrl = url + "?lat=" + lat + "&lon=" + lon + "&appid=" + id;
+        Log.e("LocationURL", tempUrl);
         StringRequest stringRequest = new StringRequest(Request.Method.GET, tempUrl, new Response.Listener<String>() {
+                    @SuppressLint("SetTextI18n")
                     @Override
                     public void onResponse(String response) {
                         Toast.makeText(MainActivity.this, "Successful", Toast.LENGTH_SHORT).show();
@@ -217,10 +227,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             JSONObject jsonObject = new JSONObject(response);
                             JSONObject jsonArray = jsonObject.getJSONArray("list").getJSONObject(0);
                             JSONObject main = jsonArray.getJSONObject("main");
-
+                            String[] labels = {"Good", "Fair", "Moderate", "Poor", "Worst"};
                             Toast.makeText(aqi.getContext(), "AQI SUCCESS", Toast.LENGTH_SHORT).show();
                             String airQuality = main.getString("aqi");
-                            aqi.setText("AQI: " + airQuality);
+                            aqi.setText("Air Quality: " + labels[Integer.parseInt(airQuality) - 1]);
+                            cmv.setValue(Integer.parseInt(airQuality));
                         }catch (JSONException e) {
                             e.printStackTrace();
                         }
