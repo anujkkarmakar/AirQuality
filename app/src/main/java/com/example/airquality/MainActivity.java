@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     CircularMeterView cmv;
 
     private static final String url = "http://api.openweathermap.org/data/2.5/air_pollution";
-    private static final String id = "1fd24c63c30371795275016b8df3a854";
+    private String id;
     private static String lat = "23" , lon = "87";
     private static final int REQUEST_CODE = 100;
 
@@ -78,6 +78,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        id = getString(R.string.openweather_api_key);
 
         CircularMeterView circularMeterView = findViewById(R.id.circularMeter);
         cmv = circularMeterView;
@@ -143,8 +145,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                             if (location != null) {
                                 lat = String.valueOf(location.getLatitude());
                                 lon = String.valueOf(location.getLongitude());
-//                                latitude.setText(lat);
-//                                longitude.setText(lon);
+                                latitude.setText("Latitude "+lat);
+                                longitude.setText("Longitude "+lon);
                             }
                             else {
                                 Toast.makeText(MainActivity.this, "Cannot get Location", Toast.LENGTH_SHORT).show();
@@ -239,7 +241,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(MainActivity.this, "Error", Toast.LENGTH_SHORT).show();
+                        if (error.networkResponse != null) {
+                            Log.e("API Error", "Error Code: " + error.networkResponse.statusCode);
+                            Log.e("API Error", "Error Body: " + new String(error.networkResponse.data));
+                        }
+                        Toast.makeText(MainActivity.this, "Error: " + error.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
                 RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());

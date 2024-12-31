@@ -35,17 +35,18 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
-    <Button
-        android:id="@+id/airQI"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Get Air Quality" />
-
     <TextView
         android:textSize="50dp"
         android:id="@+id/longitude"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
+
+
+    <Button
+        android:id="@+id/airQI"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get Air Quality" />
 
     <TextView
         android:textSize="50dp"
