@@ -100,19 +100,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
         latitude = findViewById(R.id.latitude);
         longitude = findViewById(R.id.longitude);
-        Button location = findViewById(R.id.getLocation);
         locationTV = findViewById(R.id.location);
         aqi = findViewById(R.id.aqi);
         Button airQI = findViewById(R.id.airQI);
-
-        location.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //displayLastLocation();
-                displayCurrentLocation();
-                //getLocation();
-            }
-        });
 
         airQI.setOnClickListener(new View.OnClickListener() {
             @Override
